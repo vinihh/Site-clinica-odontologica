@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>DMS - Cadastro</title>
+    <link rel="icon" href="/assets/images/logo-navegador.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/style-cad-pac-ctt.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .swal2-popup { font-family: 'Poppins', sans-serif !important; border-radius: 20px !important; }
+        .swal2-title { color: #333 !important; font-weight: 600 !important; }
+        .swal2-html-container { color: #555 !important; font-weight: 500 !important; }
+        .swal2-styled.swal2-confirm { border-radius: 25px !important; font-weight: 600 !important; padding: 10px 30px !important; }
+        .swal2-styled.swal2-cancel { border-radius: 25px !important; font-weight: 600 !important; padding: 10px 30px !important; }
+    </style>
+</head>
+<body>
+<header>
+    <img id="img-logo" src="/assets/images/logo.png" alt="" />
+
+    <div class="cad-pac-ctt-sec1">
+        <h1>Cadastrar Paciente</h1>
+        <h2>Contato</h2>
+    </div>
+</header>
+<form action="/salvar-contato" method="post" id="form-contato">
+    <aside>
+        <input name="dsCep" placeholder="CEP" id="cep"/>
+
+        <div>
+            <input name="nmRua" class="cad-pac-ctt-inpt1" placeholder="Rua" id="rua"/>
+            <input name="dsNumero" class="cad-pac-ctt-inpt2" placeholder="Número" id="num"/>
+        </div>
+
+        <input name="dsBairro" placeholder="Bairro" id="bairro"/>
+
+        <div>
+            <input name="dsCidade" class="cad-pac-ctt-inpt1" placeholder="Cidade" id="cidade"/>
+            <input name="dsUf" class="cad-pac-ctt-inpt2" placeholder="UF" id="uf" />
+        </div>
+
+        <input name="dsComplemento" placeholder="Complemento" id="complemento"/>
+
+        <div class="linha-dinamica">
+            <div class="input-com-botao">
+                <input name="dsEmail" placeholder="E-mail" type="email" id="email" class="input-principal"/>
+                <button type="button" class="btn-toggle-campo" id="btn-email" onclick="toggleCampoSecundario('email2-container', 'btn-email')">+</button>
+            </div>
+            <div class="input-secundario escondido" id="email2-container">
+                <input name="dsEmail2" placeholder="E-mail 2 (Opcional)" type="email" id="email2"/>
+            </div>
+        </div>
+
+        <div class="linha-dinamica">
+            <div class="input-com-botao">
+                <input name="dsTelefone" placeholder="Telefone" id="telefone" class="input-principal"/>
+                <button type="button" class="btn-toggle-campo" id="btn-telefone" onclick="toggleCampoSecundario('telefone2-container', 'btn-telefone')">+</button>
+            </div>
+            <div class="input-secundario escondido" id="telefone2-container">
+                <input name="dsTelefone2" placeholder="Telefone 2 (Opcional)" id="telefone2"/>
+            </div>
+        </div>
+    </aside>
+
+    <script src="https://unpkg.com/imask"></script>
+    <script>
+        IMask(document.getElementById('telefone'), { mask: '(00) 00000-0000' });
+        IMask(document.getElementById('telefone2'), { mask: '(00) 00000-0000' });
+        IMask(document.getElementById('cep'),      { mask: '00000-000' });
+    </script>
+
+    <script>
+        function toggleCampoSecundario(containerId, btnId) {
+            const container = document.getElementById(containerId);
+            const btn = document.getElementById(btnId);
+            const input = container.querySelector("input");
+
+            if (container.classList.contains("escondido")) {
+                container.classList.remove("escondido");
+                btn.innerText = "-";
+                btn.classList.add("btn-remove");
+            } else {
+                container.classList.add("escondido");
+                btn.innerText = "+";
+                btn.classList.remove("btn-remove");
+                input.value = "";
+            }
+        }
+
+        document.getElementById("cep").addEventListener("blur", buscarCEP);
+
+        async function buscarCEP(){
+            const cep = document.getElementById("cep").value.replace(/\D/g, '');
+
+            if (cep.length !== 8 && cep.length > 0){
+                Swal.fire({
+                    icon: 'warning', title: 'Atenção', text: 'CEP inválido!',
+                    confirmButtonColor: '#018EDE', scrollbarPadding: false, heightAuto: false
+                }).then(() => {
+                    document.getElementById("cep").value = "";
+                    document.getElementById("cep").focus();
+                });
+                return;
+            }
+
+            if(cep.length === 0) return;
+
+            const url = `https://viacep.com.br/ws/${cep}/json/`
+
+            try{
+                const resposta = await fetch(url);
+                const dados = await resposta.json();
+
+                if (dados.erro){
+                    Swal.fire({
+                        icon: 'error', title: 'Ops!', text: 'CEP não encontrado.',
+                        confirmButtonColor: '#018EDE', scrollbarPadding: false, heightAuto: false
+                    }).then(() => {
+                        document.getElementById("cep").value = "";
+                    });
+                    return;
+                }
+
+                document.getElementById("rua").value = dados.logradouro;
+                document.getElementById("bairro").value = dados.bairro;
+                document.getElementById("cidade").value = dados.localidade;
+                document.getElementById("uf").value = dados.uf;
+
+            } catch (erro){ console.error(erro); }
+        }
+    </script>
+
+    <p style="color:red;" th:if="${erro}" th:text="${erro}"></p>
+
+    <footer>
+        <button type="submit" id="cad-pac-ctt-butt-btt1">Cadastrar</button>
+        <button type="button" id="cad-pac-ctt-butt-btt2" onclick="cancelarCadastro()">Cancelar</button>
+    </footer>
+</form>
+
+<script>
+    const formContato = document.getElementById("form-contato");
+
+    formContato.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const cep = document.getElementById("cep").value;
+        const rua = document.getElementById("rua").value;
+        const bairro = document.getElementById("bairro").value;
+        const cidade = document.getElementById("cidade").value;
+        const uf = document.getElementById("uf").value;
+        const email = document.getElementById("email").value;
+        const telefone = document.getElementById("telefone").value;
+
+        if (!cep || !rua || !bairro || !cidade || !uf || !email || !telefone) {
+            formContato.submit();
+            return;
+        }
+
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        Toast.fire({
+            icon: 'success',
+            title: 'Sucesso!',
+            text: 'Redirecionando...'
+        });
+
+        setTimeout(() => {
+            formContato.submit();
+        }, 1500);
+    });
+
+    function cancelarCadastro() {
+        Swal.fire({
+            title: 'Atenção', text: "Deseja cancelar e excluir o cadastro?", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#e53935', cancelButtonColor: '#888',
+            confirmButtonText: 'Sim, cancelar!', cancelButtonText: 'Não, voltar',
+            scrollbarPadding: false, heightAuto: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("/cancelar-cadastro", { method: "POST" })
+                    .then(() => { window.location.href = "/pacientes"; });
+            }
+        });
+    }
+
+    window.addEventListener('load', function() {
+        const navEntries = performance.getEntriesByType("navigation");
+        if (navEntries.length > 0 && navEntries[0].type === "reload") {
+            fetch("/cancelar-cadastro", { method: "POST" }).then(() => {
+                window.location.href = "/pacientes";
+            });
+        }
+    });
+
+    let tempoInativo;
+    const tempoLimite = 20 * 60 * 1000;
+
+    function resetarTempo() {
+        clearTimeout(tempoInativo);
+        tempoInativo = setTimeout(deslogarUsuario, tempoLimite);
+    }
+
+    function deslogarUsuario() {
+        window.location.href = "/logout";
+    }
+
+    window.onload = resetarTempo;
+    document.onmousemove = resetarTempo;
+    document.onkeypress = resetarTempo;
+    document.onclick = resetarTempo;
+    document.onscroll = resetarTempo;
+</script>
+</body>
+</html>

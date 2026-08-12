@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>DMS - Cadastro</title>
+    <link rel="icon" href="/assets/images/logo-navegador.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/style-cad-espec.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-popup { font-family: 'Poppins', sans-serif !important; border-radius: 20px !important; }
+        .swal2-title { color: #333 !important; font-weight: 600 !important; }
+    </style>
+</head>
+<body>
+<header>
+    <img id="img-logo" src="/assets/images/logo.png" alt="" />
+
+    <div class="cad-pac-ctt-sec1">
+        <h1>Cadastrar Especialista</h1>
+    </div>
+</header>
+
+<form action="/salvar-funcionario" method="post">
+    <aside>
+        <input type="text" name="nmFuncionario" placeholder="Nome" th:value="${funcionario?.nmFuncionario}">
+
+        <input type="text" id="cpf" name="dsCpf" placeholder="CPF"
+               th:value="${(erro == 'CPF inválido!' or erro == 'CPF já cadastrado!') ? '' : funcionario?.dsCpf}">
+
+        <input type="email" name="dsEmail" placeholder="Email" th:value="${funcionario?.dsEmail}">
+
+        <input type="text" id="telefone" name="dsTelefone" placeholder="Telefone" th:value="${funcionario?.dsTelefone}">
+
+        <input type="text" id="cro" name="dsCro" placeholder="CRO"
+               th:value="${erro == 'CRO já cadastrado!' ? '' : funcionario?.dsCro}">
+
+        <input type="text" id="dtNascimento" name="dtNascimento" placeholder="Data de Nascimento"
+               th:value="${erro == 'Idade fora do permitido (3-100 anos)!' ? '' : funcionario?.dtNascimento}">
+
+        <select id="especialidades" name="especialidade" multiple>
+            <option th:each="esp : ${listaEspecialidades}"
+                    th:value="${esp}"
+                    th:text="${esp}">
+            </option>
+        </select>
+    </aside>
+
+    <p id="erro" style="color:red;" th:if="${erro}" th:text="${erro}"></p>
+
+    <footer>
+        <button id="cad-espec-butt-btt1" type="submit">Cadastrar</button>
+        <a href="/funcionarios"><button id="cad-espec-butt-btt2" type="button">Voltar</button></a>
+    </footer>
+</form>
+
+<script>
+    const element = document.getElementById('especialidades');
+    const choices = new Choices(element, {
+        removeItemButton: true,
+        placeholder: true,
+        placeholderValue: 'Selecione as especialidades',
+        searchEnabled: true,
+        searchPlaceholderValue: 'Buscar...',
+        shouldSort: false,
+        itemSelectText: 'Clique para selecionar'
+    });
+</script>
+
+<script src="https://unpkg.com/imask"></script>
+<script>
+    IMask(document.getElementById('cpf'), { mask: '000.000.000-00' });
+    IMask(document.getElementById('telefone'), { mask: '(00) 00000-0000' });
+    IMask(document.getElementById('cro'),      { mask: '00000-aa' });
+    IMask(document.getElementById('dtNascimento'),      { mask: '00/00/0000' });
+</script>
+
+<script th:if="${sucesso}">
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+        }
+    });
+
+    Toast.fire({
+        icon: 'success',
+        title: 'Sucesso!',
+        text: 'Redirecionando...'
+    });
+
+    setTimeout(() => {
+        window.location.href = '/funcionarios';
+    }, 1500);
+
+    let tempoInativo;
+    const tempoLimite = 20 * 60 * 1000;
+
+    function resetarTempo() {
+        clearTimeout(tempoInativo);
+        tempoInativo = setTimeout(deslogarUsuario, tempoLimite);
+    }
+
+    function deslogarUsuario() {
+        window.location.href = "/logout";
+    }
+
+    window.onload = resetarTempo;
+    document.onmousemove = resetarTempo;
+    document.onkeypress = resetarTempo;
+    document.onclick = resetarTempo;
+    document.onscroll = resetarTempo;
+</script>
+
+</body>
+</html>

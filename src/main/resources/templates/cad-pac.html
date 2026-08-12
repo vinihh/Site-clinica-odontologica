@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>DMS - Cadastro</title>
+    <link rel="icon" href="/assets/images/logo-navegador.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/style-cad-pac.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+</head>
+<body>
+<header>
+    <img id="img-logo" src="/assets/images/logo.png" alt="" />
+
+    <div>
+        <h1>Cadastrar Paciente</h1>
+    </div>
+</header>
+
+<form action="/salvar-pac" method="post">
+
+    <aside>
+        <input name="nmPaciente" placeholder="Nome" id="nmPaciente"
+               th:value="${paciente?.nmPaciente}"/>
+
+        <input name="dsCpf" placeholder="CPF" id="dsCpf"
+               th:value="${(erro == 'CPF inválido!' or erro == 'CPF já cadastrado!') ? '' : paciente?.dsCpf}"/>
+
+        <input name="dsRg" placeholder="RG" id="dsRg"
+               th:value="${erro == 'RG já cadastrado!' ? '' : paciente?.dsRg}"/>
+
+        <input name="dtNascimento" placeholder="Data de Nascimento" id="dtNascimento"
+               th:value="${erro == 'Data de nascimento Inválida!' ? '' : paciente?.dtNascimento}"/>
+    </aside>
+
+<script src="https://unpkg.com/imask"></script>
+<script>
+    IMask(document.getElementById('dsCpf'), { mask: '000.000.000-00' });
+    IMask(document.getElementById('dsRg'),      { mask: '00.000.000-0' });
+    IMask(document.getElementById('dtNascimento'),      { mask: '00/00/0000' });
+
+    const form = document.querySelector("form");
+
+    form.addEventListener("submit", function (event) {
+
+        const cpfInput = document.getElementById("dsCpf");
+
+        if (!validarCPF(cpfInput.value)) {
+            event.preventDefault();
+            alert("CPF inválido!");
+            cpfInput.focus();
+        }
+    });
+
+    let tempoInativo;
+    const tempoLimite = 20 * 60 * 1000;
+
+    function resetarTempo() {
+        clearTimeout(tempoInativo);
+        tempoInativo = setTimeout(deslogarUsuario, tempoLimite);
+    }
+
+    function deslogarUsuario() {
+        window.location.href = "/logout";
+    }
+
+    window.onload = resetarTempo;
+    document.onmousemove = resetarTempo;
+    document.onkeypress = resetarTempo;
+    document.onclick = resetarTempo;
+    document.onscroll = resetarTempo;
+</script>
+
+    <p id="erro" style="color:red;"  th:if="${erro}" th:text="${erro}"></p>
+
+<footer>
+    <button id="cad-pac-ctt-butt-btt1" type="submit">Continuar</button>
+
+<a href="/pacientes"><button id="cad-pac-ctt-butt-btt2" type="button">Cancelar</button></a>
+</footer>
+</form>
+
+</body>
+</html>

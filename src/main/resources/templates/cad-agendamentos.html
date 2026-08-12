@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>DMS - Agendar</title>
+    <link rel="icon" href="/assets/images/logo-navegador.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+    <link rel="stylesheet" th:href="@{/css/style-cad-agen.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-popup { font-family: 'Poppins', sans-serif !important; border-radius: 20px !important; }
+        .swal2-title { color: #333 !important; font-weight: 600 !important; }
+
+        .horario-btn:disabled, .horario-btn.ocupado {
+            background-color: #e53935 !important;
+            color: white !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+    <header>
+        <img id="img-logo" src="/assets/images/logo.png" alt="Logo DMS">
+        <div class="cad-agen-sec1">
+            <h1>Cadastrar Agendamento</h1>
+        </div>
+    </header>
+
+    <aside class="form-grid">
+        <div class="form-row full-width">
+            <select id="paciente" name="paciente">
+                <option value="" disabled selected>Buscar Paciente (Nome ou CPF)</option>
+                <option th:each="pac : ${pacientes}"
+                        th:value="${pac.idPaciente}"
+                        th:text="${pac.nmPaciente + '  -  CPF: ' + pac.dsCpf}">
+                </option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <select id="especialidade">
+                <option value="" disabled selected>Especialidade</option>
+                <option th:each="esp : ${listaEspecialidades}" th:value="${esp}" th:text="${esp}"></option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <select id="doutor" disabled>
+                <option value="" disabled selected>Primeiro selecione a especialidade</option>
+            </select>
+        </div>
+
+        <div class="form-row full-width">
+            <input type="date" id="data" disabled />
+        </div>
+    </aside>
+
+    <section class="horarios">
+        <div class="horarios-grid" id="grid-horarios">
+            <button type="button" class="horario-btn" data-hora="08:00">08:00</button>
+            <button type="button" class="horario-btn" data-hora="08:45">08:45</button>
+            <button type="button" class="horario-btn" data-hora="09:30">09:30</button>
+            <button type="button" class="horario-btn" data-hora="10:15">10:15</button>
+            <button type="button" class="horario-btn" data-hora="11:00">11:00</button>
+            <button type="button" class="horario-btn" data-hora="11:45">11:45</button>
+            <button type="button" class="horario-btn" data-hora="12:30">12:30</button>
+
+            <button type="button" class="horario-btn" data-hora="13:15">13:15</button>
+            <button type="button" class="horario-btn" data-hora="14:00">14:00</button>
+            <button type="button" class="horario-btn" data-hora="14:45">14:45</button>
+            <button type="button" class="horario-btn" data-hora="15:30">15:30</button>
+            <button type="button" class="horario-btn" data-hora="16:15">16:15</button>
+            <button type="button" class="horario-btn" data-hora="17:00">17:00</button>
+            <button type="button" class="horario-btn" data-hora="17:45">17:45</button>
+        </div>
+    </section>
+
+    <div class="form-row full-width observacao-row">
+        <input placeholder="Observação" id="observacao" />
+    </div>
+
+    <div class="form-row full-width preco-container">
+        <span class="preco-label">Valor da Consulta:</span>
+        <input type="text" class="preco-box" id="valor" value="R$ 00,00" />
+    </div>
+
+    <footer>
+        <a th:href="@{/agendamentos}">
+            <button type="button" id="btn-voltar">Voltar</button>
+        </a>
+        <button type="button" id="btn-cadastrar" onclick="salvarAgendamento()">
+            Cadastrar
+        </button>
+    </footer>
+</main>
+
+<script src="https://unpkg.com/imask"></script>
+<script>
+    const precosEspecialidades = {
+        "Limpeza dental": "150.00",
+        "Clareamento dental": "400.00",
+        "Aparelho dentário": "250.00",
+        "Canal": "600.00",
+        "Implante dentário": "1200.00",
+        "Prótese dentária": "800.00",
+        "Extração de dente": "180.00",
+        "Dente do siso": "350.00"
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectPaciente = document.getElementById('paciente');
+        new Choices(selectPaciente, {
+            searchEnabled: true,
+            itemSelectText: '',
+            shouldSort: false,
+            placeholder: true,
+            searchPlaceholderValue: 'Digite o nome ou CPF aqui...',
+            noResultsText: 'Nenhum paciente encontrado'
+        });
+    });
+
+    const valorInput = document.getElementById('valor');
+    const maskValor = IMask(valorInput, {
+        mask: 'R$ num',
+        blocks: {
+            num: {
+                mask: Number,
+                scale: 2,
+                thousandsSeparator: '.',
+                padFractionalZeros: true,
+                radix: ',',
+                mapToRadix: ['.']
+            }
+        }
+    });
+
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById("data").setAttribute('min', hoje);
+
+    let horarioSelecionado = null;
+
+    document.getElementById("especialidade").addEventListener("change", async function() {
+        const especialidade = this.value;
+        const selectDoutor = document.getElementById("doutor");
+
+        maskValor.unmaskedValue = precosEspecialidades[especialidade] || '100.00';
+
+        selectDoutor.innerHTML = '<option value="" disabled selected>Carregando...</option>';
+        selectDoutor.disabled = true;
+
+        const response = await fetch(`/api/buscar-doutores?especialidade=${encodeURIComponent(especialidade)}`);
+        const doutores = await response.json();
+
+        if (doutores.length > 0) {
+            selectDoutor.innerHTML = '<option value="" disabled selected>Selecione um Doutor(a)</option>';
+            doutores.forEach(doc => {
+                const opt = document.createElement("option");
+                opt.value = doc.idFuncionario;
+                opt.innerText = doc.nmFuncionario;
+                selectDoutor.appendChild(opt);
+            });
+            selectDoutor.disabled = false;
+        } else {
+            selectDoutor.innerHTML = '<option value="" disabled selected>Nenhum doutor para essa área</option>';
+        }
+    });
+
+    document.getElementById("doutor").addEventListener("change", function() {
+        document.getElementById("data").disabled = false;
+        verificarHorarios();
+    });
+
+    document.getElementById("data").addEventListener("change", verificarHorarios);
+
+    async function verificarHorarios() {
+        const idDoutor = document.getElementById("doutor").value;
+        const data = document.getElementById("data").value;
+
+        if (!idDoutor || !data) return;
+
+        document.querySelectorAll(".horario-btn").forEach(btn => {
+            btn.classList.remove("ocupado", "selecionado");
+            btn.disabled = false;
+        });
+        horarioSelecionado = null;
+
+        const response = await fetch(`/api/horarios-ocupados?idDoutor=${idDoutor}&data=${data}`);
+        const horariosOcupados = await response.json();
+
+        document.querySelectorAll(".horario-btn").forEach(btn => {
+            const horaBotao = btn.getAttribute("data-hora");
+            const ocupado = horariosOcupados.some(h => h.substring(0,5) === horaBotao);
+
+            if (ocupado) {
+                btn.classList.add("ocupado");
+                btn.disabled = true;
+            }
+        });
+    }
+
+    document.querySelectorAll('.horario-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains("ocupado")) return;
+
+            document.querySelectorAll('.horario-btn').forEach(b => b.classList.remove('selecionado'));
+            this.classList.add('selecionado');
+            horarioSelecionado = this.getAttribute("data-hora");
+        });
+    });
+
+    function salvarAgendamento() {
+        const idPaciente = document.getElementById("paciente").value;
+        const especialidade = document.getElementById("especialidade").value;
+        const idDoutor = document.getElementById("doutor").value;
+        const data = document.getElementById("data").value;
+        const observacao = document.getElementById("observacao").value;
+
+        const valorLimpo = maskValor.unmaskedValue;
+
+        if (!idPaciente || !especialidade || !idDoutor || !data || !horarioSelecionado || !valorLimpo) {
+            Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Preencha todos os campos e selecione um horário!' });
+            return;
+        }
+
+        const dados = {
+            idPaciente: idPaciente,
+            especialidade: especialidade,
+            idDoutor: idDoutor,
+            data: data,
+            horario: horarioSelecionado + ":00",
+            observacao: observacao,
+            valor: valorLimpo
+        };
+
+        fetch("/api/salvar-agendamento", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dados)
+        }).then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Agendado!',
+                text: 'Agendamento cadastrado com sucesso!',
+                confirmButtonColor: '#3366ff'
+            }).then(() => {
+                window.location.href = '/agendamentos';
+            });
+        });
+    }
+
+    let tempoInativo;
+    const tempoLimite = 20 * 60 * 1000;
+    function resetarTempo() {
+        clearTimeout(tempoInativo);
+        tempoInativo = setTimeout(() => { window.location.href = "/logout"; }, tempoLimite);
+    }
+    window.onload = resetarTempo;
+    document.onmousemove = resetarTempo;
+    document.onkeypress = resetarTempo;
+    document.onclick = resetarTempo;
+    document.onscroll = resetarTempo;
+</script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Agendamentos</title>
+    <link rel="icon" href="/assets/images/logo-navegador.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/style-agendamento.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-popup { font-family: 'Poppins', sans-serif !important; border-radius: 20px !important; }
+        .horario-btn:disabled, .horario-btn.ocupado { background-color: #e53935 !important; color: white !important; cursor: not-allowed; opacity: 0.7; }
+    </style>
+</head>
+
+<body>
+<header>
+    <img id="img-logo" src="/assets/images/logo.png" alt="" />
+    <h1>Agendamentos</h1>
+</header>
+
+<main class="container">
+
+    <form method="get" action="/agendamentos" class="filtros-container">
+        <input type="date" name="dataFiltro" class="pesquisa" th:value="${param.dataFiltro}">
+        <select name="statusFiltro" class="pesquisa">
+            <option value="">Todos os Status</option>
+            <option value="AGENDADO" th:selected="${#strings.equals(param.statusFiltro, 'AGENDADO')}">Agendado</option>
+            <option value="PAGO" th:selected="${#strings.equals(param.statusFiltro, 'PAGO')}">Pago</option>
+            <option value="CANCELADO" th:selected="${#strings.equals(param.statusFiltro, 'CANCELADO')}">Cancelado</option>
+            <option value="REMARCADO" th:selected="${#strings.equals(param.statusFiltro, 'REMARCADO')}">Remarcado</option>
+        </select>
+        <select name="ordenacao" class="pesquisa">
+            <option value="hora" th:selected="${#strings.equals(param.ordenacao, 'hora')}">Ordenar por Data/Hora</option>
+            <option value="especialidade" th:selected="${#strings.equals(param.ordenacao, 'especialidade')}">Por Especialidade</option>
+            <option value="especialista" th:selected="${#strings.equals(param.ordenacao, 'especialista')}">Por Especialista</option>
+        </select>
+
+        <button type="submit" class="btn-novo" style="width: 120px;">Filtrar</button>
+        <a th:href="@{/agendamentos}"><button type="button" class="btn-voltar" style="height: 45px; border-radius: 25px;">Limpar</button></a>
+    </form>
+
+    <section class="cards">
+        <div class="card" th:each="ag : ${agendamentos}">
+
+            <div class="status-tag" th:classappend="${ag.dsStatusAgendamento == 'PAGO' ? 'tag-verde' : (ag.dsStatusAgendamento == 'CANCELADO' ? 'tag-vermelha' : 'tag-laranja')}"
+                 th:text="${#strings.toUpperCase(ag.dsStatusAgendamento)}">
+            </div>
+
+            <div class="info">
+                <p><span>Paciente:</span> <span class="txt-gray" th:text="${ag.paciente.nmPaciente}"></span></p>
+                <p><span>Especialista:</span> <span class="txt-gray" th:text="${ag.funcionario.nmFuncionario}"></span></p>
+                <p><span>Especialidade:</span> <span class="txt-gray" th:text="${ag.dsTipoServico}"></span></p>
+                <p><span>Data e Hora:</span> <span class="txt-gray" th:text="${#temporals.format(ag.dtConsulta, 'dd/MM/yyyy')} + ' às ' + ${ag.hrConsulta}"></span></p>
+            </div>
+
+            <button class="btn-detalhes" th:attr="onclick=|abrirModal(
+                '${ag.idAgendamento}',
+                '${ag.funcionario.idFuncionario}',
+                '${ag.paciente.nmPaciente}',
+                '${ag.paciente.dsCpf}',
+                '${ag.funcionario.nmFuncionario}',
+                '${ag.dsTipoServico}',
+                '${#temporals.format(ag.dtConsulta, 'dd/MM/yyyy')}',
+                '${ag.hrConsulta}',
+                '${ag.vlPreco}',
+                '${ag.dsStatusAgendamento}',
+                '${ag.pagamento != null ? ag.pagamento.formaPagamento : ''}',
+                '${ag.pagamento != null ? ag.pagamento.valor : ''}',
+                '${ag.dsMotivoCancelamento != null ? ag.dsMotivoCancelamento : ''}',
+                '${ag.pagamento != null ? ag.pagamento.parcelas : 1}',
+                '${ag.usuarioAtualizacao != null ? ag.usuarioAtualizacao : ''}',
+                '${ag.dataHoraAtualizacao != null ? #temporals.format(ag.dataHoraAtualizacao, 'dd/MM/yyyy HH:mm') : ''}'
+            )|">Detalhes</button>
+        </div>
+    </section>
+
+    <div class="acoes">
+        <a th:href="@{/}"><button id="btn-voltar2" class="btn-voltar">Voltar</button></a>
+        <a th:href="@{/cad-agendamentos}" class="btn-novo">Novo Agendamento</a>
+    </div>
+</main>
+
+<div class="overlay" id="modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Detalhes do Agendamento</h2>
+            <button class="btn-fechar" onclick="fecharModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="linha">
+                <div><label>Paciente</label><input type="text" id="modPaciente" disabled></div>
+                <div><label>CPF</label><input type="text" id="modCpf" disabled></div>
+            </div>
+
+            <div class="linha">
+                <div><label>Especialista</label><input type="text" id="modDoutor" disabled></div>
+                <div><label>Especialidade</label><input type="text" id="modEspec" disabled></div>
+            </div>
+
+            <div class="linha">
+                <div><label>Data</label><input type="text" id="modData" disabled></div>
+                <div><label>Hora</label><input type="text" id="modHora" disabled></div>
+            </div>
+
+            <div class="linha">
+                <div><label>Valor</label><input type="text" id="modValor" disabled style="font-weight: 600; color: #2f5de5;"></div>
+                <div><label>Status atual</label><input type="text" id="modStatus" disabled></div>
+            </div>
+
+            <div id="areaPagamento" style="display: none; background: #eef5e9; border: 1px solid #c8e6c9; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                <h3 style="color: #2e7d32; font-size: 16px; margin-bottom: 5px;">Recibo de Pagamento</h3>
+                <p style="font-size: 14px;"><strong>Forma:</strong> <span id="reciboForma"></span></p>
+                <p style="font-size: 14px;" id="linhaParcelas"><strong>Parcelas:</strong> <span id="reciboParcelas"></span>x</p>
+                <p style="font-size: 14px;"><strong>Valor Pago:</strong> R$ <span id="reciboValor"></span></p>
+            </div>
+
+            <div id="areaCancelamento" style="display: none; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                <h3 style="color: #c62828; font-size: 16px; margin-bottom: 5px;">Consulta Cancelada</h3>
+                <p style="font-size: 14px;"><strong>Motivo:</strong> <span id="motivoCancelamento"></span></p>
+            </div>
+
+            <div id="areaRemarcar" style="display: none; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px;">
+                <h3 style="color: #2f5de5; margin-bottom: 15px;">Remarcar Agendamento</h3>
+                <div class="linha" style="margin-bottom: 15px;">
+                    <div>
+                        <label>Escolha a nova data</label>
+                        <input type="date" id="novaData" onchange="verificarHorariosRemarcar()" style="background: #dbe6ff;">
+                    </div>
+                </div>
+
+                <div class="horarios-grid" id="grid-horarios-remarcar">
+                    <button type="button" class="horario-btn" data-hora="08:00">08:00</button>
+                    <button type="button" class="horario-btn" data-hora="08:45">08:45</button>
+                    <button type="button" class="horario-btn" data-hora="09:30">09:30</button>
+                    <button type="button" class="horario-btn" data-hora="10:15">10:15</button>
+                    <button type="button" class="horario-btn" data-hora="11:00">11:00</button>
+                    <button type="button" class="horario-btn" data-hora="11:45">11:45</button>
+                    <button type="button" class="horario-btn" data-hora="12:30">12:30</button>
+                    <button type="button" class="horario-btn" data-hora="13:15">13:15</button>
+                    <button type="button" class="horario-btn" data-hora="14:00">14:00</button>
+                    <button type="button" class="horario-btn" data-hora="14:45">14:45</button>
+                    <button type="button" class="horario-btn" data-hora="15:30">15:30</button>
+                    <button type="button" class="horario-btn" data-hora="16:15">16:15</button>
+                    <button type="button" class="horario-btn" data-hora="17:00">17:00</button>
+                    <button type="button" class="horario-btn" data-hora="17:45">17:45</button>
+                </div>
+            </div>
+
+            <!-- LOG DE AUDITORIA DISCRETO -->
+            <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; font-size: 11px; color: #999; text-align: right; font-style: italic;">
+                Última atualização por <b id="logUsuario" style="color: #666;"></b> em <b id="logData" style="color: #666;"></b>
+            </div>
+        </div>
+
+        <div class="modal-footer" id="modalFooterAcoes">
+            <button class="btn-apagar" onclick="solicitarCancelamento()">Cancelar Consulta</button>
+            <button class="btn-editar" onclick="abrirPainelRemarcar()">Remarcar</button>
+            <button class="btn-novo" style="width: auto; height: 40px; padding: 0 20px; font-size: 14px;" onclick="iniciarPagamento()">Finalizar e Pagar</button>
+        </div>
+
+        <div class="modal-footer" id="modalFooterRemarcar" style="display: none;">
+            <button class="btn-voltar" onclick="cancelarRemarcar()" style="height: 40px; padding: 0 20px;">Voltar</button>
+            <button class="btn-novo" style="width: auto; height: 40px; padding: 0 20px; font-size: 14px;" onclick="confirmarRemarcar()">Confirmar Nova Data</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let idAtual = null;
+    let idDoutorAtual = null;
+    let valorAtual = 0;
+    let novoHorarioSelecionado = null;
+
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById("novaData").setAttribute('min', hoje);
+
+    function abrirModal(id, idDoutor, pac, cpf, doutor, espec, data, hora, preco, status, pagForma, pagValor, motivo, pagParcelas, userLog, dateLog) {
+        idAtual = id;
+        idDoutorAtual = idDoutor;
+        valorAtual = preco;
+
+        document.getElementById('modPaciente').value = pac;
+        document.getElementById('modCpf').value = cpf;
+        document.getElementById('modDoutor').value = doutor;
+        document.getElementById('modEspec').value = espec;
+        document.getElementById('modData').value = data;
+        document.getElementById('modHora').value = hora;
+        document.getElementById('modValor').value = "R$ " + preco;
+        document.getElementById('modStatus').value = status;
+
+        document.getElementById('logUsuario').innerText = userLog ? userLog : 'Sistema';
+        document.getElementById('logData').innerText = dateLog ? dateLog : '--/--/---- --:--';
+
+        document.getElementById('areaPagamento').style.display = 'none';
+        document.getElementById('areaCancelamento').style.display = 'none';
+        document.getElementById('areaRemarcar').style.display = 'none';
+        document.getElementById('modalFooterAcoes').style.display = 'flex';
+        document.getElementById('modalFooterRemarcar').style.display = 'none';
+
+        if(status === 'PAGO') {
+            document.getElementById('areaPagamento').style.display = 'block';
+            document.getElementById('reciboForma').innerText = pagForma;
+            document.getElementById('reciboValor').innerText = pagValor;
+
+            if(pagForma === 'Cartão de Crédito') {
+                document.getElementById('linhaParcelas').style.display = 'block';
+                document.getElementById('reciboParcelas').innerText = pagParcelas;
+            } else {
+                document.getElementById('linhaParcelas').style.display = 'none';
+            }
+
+            document.getElementById('modalFooterAcoes').style.display = 'none';
+        } else if (status === 'CANCELADO') {
+            document.getElementById('areaCancelamento').style.display = 'block';
+            document.getElementById('motivoCancelamento').innerText = motivo;
+            document.getElementById('modalFooterAcoes').style.display = 'none';
+        }
+
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+
+    async function solicitarCancelamento() {
+        const { value: motivo } = await Swal.fire({
+            title: 'Cancelar Consulta', input: 'text', inputLabel: 'Qual o motivo do cancelamento?',
+            inputPlaceholder: 'Digite o motivo...', showCancelButton: true, confirmButtonColor: '#e53935',
+            cancelButtonColor: '#888', confirmButtonText: 'Confirmar Cancelamento', cancelButtonText: 'Cancelar',
+            inputValidator: (value) => { if (!value) { return 'Você precisa digitar o motivo!' } }
+        });
+
+        if (motivo) {
+            fetch("/agendamentos/api/mudar-status", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: idAtual, status: 'CANCELADO', motivo: motivo })
+            }).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cancelado!',
+                    text: 'A consulta foi cancelada com sucesso.',
+                    confirmButtonColor: '#3366ff'
+                }).then(() => location.reload());
+            });
+        }
+    }
+
+    function abrirPainelRemarcar() {
+        document.getElementById('modalFooterAcoes').style.display = 'none';
+        document.getElementById('areaRemarcar').style.display = 'block';
+        document.getElementById('modalFooterRemarcar').style.display = 'flex';
+        document.getElementById("novaData").value = "";
+        novoHorarioSelecionado = null;
+        document.querySelectorAll("#grid-horarios-remarcar .horario-btn").forEach(btn => {
+            btn.classList.remove("ocupado", "selecionado"); btn.disabled = false;
+        });
+    }
+
+    function cancelarRemarcar() {
+        document.getElementById('areaRemarcar').style.display = 'none';
+        document.getElementById('modalFooterRemarcar').style.display = 'none';
+        document.getElementById('modalFooterAcoes').style.display = 'flex';
+    }
+
+    async function verificarHorariosRemarcar() {
+        const data = document.getElementById("novaData").value;
+        if (!data) return;
+
+        document.querySelectorAll("#grid-horarios-remarcar .horario-btn").forEach(btn => {
+            btn.classList.remove("ocupado", "selecionado"); btn.disabled = false;
+        });
+        novoHorarioSelecionado = null;
+
+        const response = await fetch(`/api/horarios-ocupados?idDoutor=${idDoutorAtual}&data=${data}`);
+        const horariosOcupados = await response.json();
+
+        document.querySelectorAll("#grid-horarios-remarcar .horario-btn").forEach(btn => {
+            const horaBotao = btn.getAttribute("data-hora");
+            const ocupado = horariosOcupados.some(h => h.substring(0,5) === horaBotao);
+            if (ocupado) { btn.classList.add("ocupado"); btn.disabled = true; }
+        });
+    }
+
+    document.querySelectorAll('#grid-horarios-remarcar .horario-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains("ocupado")) return;
+            document.querySelectorAll('#grid-horarios-remarcar .horario-btn').forEach(b => b.classList.remove('selecionado'));
+            this.classList.add('selecionado');
+            novoHorarioSelecionado = this.getAttribute("data-hora");
+        });
+    });
+
+    function confirmarRemarcar() {
+        const data = document.getElementById("novaData").value;
+        if (!data || !novoHorarioSelecionado) {
+            Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Escolha a nova data e o novo horário!' }); return;
+        }
+
+        fetch("/agendamentos/api/mudar-status", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: idAtual, status: 'REMARCADO', data: data, horario: novoHorarioSelecionado + ":00" })
+        }).then(() => {
+            Swal.fire({ icon: 'success', title: 'Remarcado!', text: 'A consulta foi remarcada com sucesso.' }).then(() => location.reload());
+        });
+    }
+    async function iniciarPagamento() {
+        const result = await Swal.fire({
+            title: 'Finalizar Consulta',
+            html: `
+                <p style="margin-bottom:20px; font-weight: 500;">Valor a cobrar: <span style="color:#2f5de5; font-size:18px;">R$ ${valorAtual}</span></p>
+
+                <div style="text-align: left; width: 90%; margin: 0 auto;">
+                    <label style="font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; display: block;">Forma de Pagamento</label>
+                    <select id="swal-forma-pag" style="width: 100%; padding: 12px 15px; border-radius: 8px; border: none; background: #eaeaea; font-family: 'Poppins', sans-serif; font-size: 14px; color: #333; outline: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23555%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;">
+                        <option value="" disabled selected>Selecione a forma de pagamento</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                    </select>
+                </div>
+
+                <div id="div-parcelas" style="display: none; margin-top: 15px; text-align: left; width: 90%; margin-left: auto; margin-right: auto;">
+                    <label style="font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; display: block;">Número de Parcelas</label>
+                    <select id="swal-parcelas" style="width: 100%; padding: 12px 15px; border-radius: 8px; border: none; background: #eaeaea; font-family: 'Poppins', sans-serif; font-size: 14px; color: #333; outline: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23555%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;">
+                        <option value="1">1x (À vista)</option>
+                        <option value="2">2x</option>
+                        <option value="3">3x</option>
+                        <option value="4">4x</option>
+                        <option value="5">5x</option>
+                        <option value="6">6x</option>
+                    </select>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#0eb51c',
+            cancelButtonColor: '#e53935',
+            confirmButtonText: 'Confirmar Pagamento',
+            cancelButtonText: 'Cancelar',
+            didOpen: () => {
+                const selectForma = document.getElementById('swal-forma-pag');
+                const divParcelas = document.getElementById('div-parcelas');
+
+                selectForma.addEventListener('change', () => {
+                    if (selectForma.value === 'Cartão de Crédito') {
+                        divParcelas.style.display = 'block';
+                    } else {
+                        divParcelas.style.display = 'none';
+                    }
+                });
+            },
+            preConfirm: () => {
+                const forma = document.getElementById('swal-forma-pag').value;
+                const parcelas = document.getElementById('swal-parcelas').value;
+                if (!forma) {
+                    Swal.showValidationMessage('Selecione uma forma de pagamento!');
+                    return false;
+                }
+                return { formaPagamento: forma, parcelas: parcelas };
+            }
+        });
+
+        if (result.isConfirmed) {
+            const dadosPagamento = {
+                idAgendamento: idAtual,
+                valor: valorAtual,
+                formaPagamento: result.value.formaPagamento,
+                parcelas: result.value.parcelas
+            };
+
+            fetch("/agendamentos/api/finalizar-pagamento", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dadosPagamento)
+            }).then(() => {
+                Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Consulta finalizada e paga.' }).then(() => location.reload());
+            });
+        }
+    }
+
+    let tempoInativo; function resetarTempo() { clearTimeout(tempoInativo); tempoInativo = setTimeout(() => { window.location.href = "/logout"; }, 20 * 60 * 1000); }
+    window.onload = resetarTempo; document.onmousemove = resetarTempo; document.onkeypress = resetarTempo;
+</script>
+</body>
+</html>

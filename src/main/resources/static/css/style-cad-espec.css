@@ -1,0 +1,290 @@
+*{
+    margin: 0;
+    box-sizing: border-box;
+    padding: 0;
+}
+
+body{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    overflow: hidden;
+}
+
+header{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -15px;
+    height: 20vh;
+}
+
+header *{
+    margin: 0;
+}
+
+header img{
+    width: clamp(100px, 12vw, 200px);
+}
+
+.cad-pac-ctt-sec1{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cad-pac-ctt-sec1 h1{
+    color: #018EDE;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+    font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+}
+
+form {
+    width: 100vw;
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+}
+
+aside{
+    display: flex;
+    flex-direction: column;
+}
+
+form aside *{
+    margin: 5px 0;
+}
+
+form aside input{
+    background-color: #E6E6E6;
+    outline: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    border-radius: 48px;
+    padding: 0 0 0 20px;
+    font-family: "Poppins", sans-serif;
+    font-size:clamp(0.5rem, 0.8vw, 1.1rem) ;
+    font-weight: 400;
+}
+
+form aside input::placeholder{
+    color: rgba(0, 0, 0, 0.5);
+}
+
+#erro{
+    font-family: "Poppins", sans-serif;
+}
+
+form aside > input{
+    width: 35vw;
+    height: 5vh;
+}
+
+form footer{
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-around;
+    width: 45vw;
+    margin: 0 10px;
+    position: relative;
+    left: -70px;
+}
+
+#cad-espec-butt-btt1{
+    border: none;
+    height: 6vh;
+    width: 35vw;
+    background-color:#2256e6f1 ;
+    border-radius: 48px;
+    font-family: "Poppins", sans-serif;
+    font-size:clamp(1rem, 1.1vw, 2rem) ;
+    font-weight: 600;
+    color: white;
+}
+
+#cad-espec-butt-btt2{
+    border: none;
+    height: 6vh;
+    width: 7vw;
+    background-color:#e62222 ;
+    border-radius: 48px;
+    font-family: "Poppins", sans-serif;
+    font-size:clamp(1rem, 1.1vw, 2rem) ;
+    font-weight: 600;
+    color: white;
+}
+
+form aside select[multiple] {
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 4px;
+    font-size: 14px;
+}
+
+.choices {
+    margin-bottom: 0px !important;
+    width: 100% !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+.choices__inner {
+    background-color: #E6E6E6;
+    border: none !important;
+    border-radius: 24px !important;
+    min-height: 5vh !important;
+    height: auto !important;
+    padding: 6px 15px 6px 20px !important;
+    max-width: 35vw !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.choices__list--multiple {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    overflow: visible !important;
+    gap: 5px;
+}
+
+.choices__list--multiple .choices__item {
+    background-color: #2256e6f1 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-family: "Poppins", sans-serif;
+    border-radius: 48px !important;
+    padding: 4px 10px !important;
+    margin: 2px 0 !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+.choices__list--multiple .choices__item .choices__button {
+    border-left: 1px solid rgba(255, 255, 255, 0.3) !important;
+    margin-left: 5px !important;
+}
+
+.choices__input {
+    background-color: transparent !important;
+    font-size: 0.9rem !important;
+    color: #666 !important;
+    font-family: "Poppins", sans-serif;
+    margin-bottom: 0 !important;
+}
+
+.choices__list--multiple:not(:empty) ~ .choices__input {
+    display: none !important;
+}
+
+.choices__list--dropdown {
+    font-family: 'Poppins', sans-serif !important;
+    border-radius: 12px !important;
+    border: 1px solid #e2e2e2 !important;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.choices__list--dropdown .choices__item {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 0.9rem !important;
+    color: #333333 !important;
+    padding: 10px 15px !important;
+}
+
+.choices__list--dropdown .choices__item--focusable:hover {
+    background-color: #f4f4f4 !important;
+    color: #0b66c3 !important;
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        padding: 20px 0;
+    }
+
+    header {
+        margin-top: -50px;
+        height: auto;
+    }
+
+    header img {
+        width: 110px;
+        margin-bottom: 5px;
+    }
+
+    .cad-pac-ctt-sec1 h1 {
+        font-size: 1.6rem;
+    }
+
+    form {
+        width: 100%;
+        height: 55vh;
+        padding: 0 25px;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    aside {
+        width: 100%;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    form aside * {
+        margin: 4px 0;
+    }
+
+    form aside input {
+        width: 100% !important;
+        height: 44px !important;
+        font-size: 14px !important;
+        padding-left: 20px !important;
+    }
+
+    .choices__inner {
+        max-width: 100% !important;
+        width: 100% !important;
+        min-height: 44px !important;
+        padding: 4px 12px 4px 18px !important;
+        border-radius: 22px !important;
+    }
+
+    .choices__list--multiple .choices__item {
+        font-size: 0.8rem !important;
+        padding: 3px 8px !important;
+    }
+
+    form footer {
+        width: 100%;
+        flex-direction: column-reverse;
+        left: 0;
+        margin-top: 30px;
+        gap: 8px;
+        padding: 0 25px;
+    }
+
+    #cad-espec-butt-btt1 {
+        width: 100%;
+        height: 46px;
+        font-size: 15px;
+    }
+
+    #cad-espec-butt-btt2 {
+        width: 120px;
+        height: 46px;
+        font-size: 15px;
+    }
+}
