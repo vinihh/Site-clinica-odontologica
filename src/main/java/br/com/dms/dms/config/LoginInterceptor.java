@@ -14,15 +14,13 @@ public class LoginInterceptor implements HandlerInterceptor {
 
         HttpSession session = request.getSession(false);
 
-        // Verifica se a sessão existe e se o usuário está logado
-        // (Assumindo que no seu LoginController você salva algo como session.setAttribute("usuarioLogado", nome))
         if (session == null || session.getAttribute("usuarioLogado") == null) {
 
-            // Se não estiver logado, chuta o cara pra tela de login
+
             response.sendRedirect("/login");
-            return false; // Bloqueia o acesso à página solicitada
+            return false;
         }
 
-        return true; // Deixa passar se estiver logado
+        return true;
     }
 }
