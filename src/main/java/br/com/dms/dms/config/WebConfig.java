@@ -14,12 +14,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginInterceptor)
-                .addPathPatterns("/**") // Protege TODAS as páginas do sistema
+                .addPathPatterns("/**") 
                 .excludePathPatterns(
-                        "/login",           // Libera a rota de tentar logar
-                        "/assets/**",       // Libera as imagens
-                        "/css/**",          // Libera o CSS
-                        "/js/**"            // Libera o JavaScript (se tiver pasta js)
+                        "/login",          
+                        "/assets/**",       
+                        "/css/**",          
+                        "/js/**"           
                 );
     }
 }
